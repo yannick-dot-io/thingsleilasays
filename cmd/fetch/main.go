@@ -69,7 +69,7 @@ func newS3(region, accessKeyID, secretAccessKey string) (*s3.S3, error) {
 	return s3.New(sess), nil
 }
 
-func putS3(s *s3.S3, bucket, name string, tweets []twitter.Tweet) error {
+func putTweets(s *s3.S3, bucket, name string, tweets []twitter.Tweet) error {
 	data, err := json.Marshal(tweets)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = putS3(s, cfg.AWS.Bucket, cfg.AWS.ObjectName, tweets)
+	err = putTweets(s, cfg.AWS.Bucket, cfg.AWS.ObjectName, tweets)
 	if err != nil {
 		log.Fatal(err)
 	}
