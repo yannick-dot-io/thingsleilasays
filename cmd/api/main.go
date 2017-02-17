@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -95,8 +95,15 @@ func (h *pageHandler) getPage() (*page, error) {
 
 func (h *pageHandler) getTemplate(path string) (*template.Template, error) {
 	funcMap := template.FuncMap{
-		"formatDate": func(date string) string {
-			return strings.Join(strings.Split(date, " ")[:3], " ")
+		"formatDate": func(date string) (string, error) {
+			t, err := time.Parse(time.RubyDate, date)
+			if err != nil {
+				return "", err
+			}
+			if t.Year() != time.Now().Year() {
+				return t.Format("Mon Jan 2, 2006"), nil
+			}
+			return t.Format("Mon Jan 2"), nil
 		},
 	}
 	return template.New("index.html").Funcs(funcMap).ParseFiles(path)
@@ -163,5 +170,6 @@ func main() {
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.Handle("/", handler)
+	log.Printf("binding to port %d", cfg.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), nil)
 }
