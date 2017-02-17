@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 	"github.com/joeshaw/envdecode"
@@ -39,8 +43,8 @@ func newTwitterClient(consumerKey, consumerSecret, accessToken, accessSecret str
 
 func fetchTweets(client *twitter.Client, username string, limit int) ([]twitter.Tweet, error) {
 	params := &twitter.UserTimelineParams{
-		ScreenName: cfg.Username,
-		Count:      cfg.Twitter.TweetLimit,
+		ScreenName: username,
+		Count:      limit,
 	}
 	tweets, resp, err := client.Timelines.UserTimeline(params)
 	if err != nil {
@@ -48,6 +52,34 @@ func fetchTweets(client *twitter.Client, username string, limit int) ([]twitter.
 	}
 	resp.Body.Close()
 	return tweets, nil
+}
+
+func newS3(region, accessKeyID, secretAccessKey string) (*s3.S3, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+		Credentials: credentials.NewStaticCredentials(
+			accessKeyID,
+			secretAccessKey,
+			"",
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s3.New(sess), nil
+}
+
+func putS3(s *s3.S3, bucket, name string, tweets []twitter.Tweet) error {
+	data, err := json.Marshal(tweets)
+	if err != nil {
+		return err
+	}
+	_, err = s.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(name),
+		Body:   bytes.NewReader(data),
+	})
+	return err
 }
 
 func main() {
@@ -58,9 +90,16 @@ func main() {
 
 	client := newTwitterClient(cfg.Twitter.ConsumerKey, cfg.Twitter.ConsumerSecret, cfg.Twitter.AccessToken, cfg.Twitter.AccessSecret)
 	tweets, err := fetchTweets(client, cfg.Username, cfg.Twitter.TweetLimit)
-	data, err := json.Marshal(tweets)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s\n", data)
+
+	s, err := newS3(cfg.AWS.Region, cfg.AWS.AccessKeyID, cfg.AWS.SecretAccessKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = putS3(s, cfg.AWS.Bucket, cfg.AWS.ObjectName, tweets)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
