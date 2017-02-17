@@ -32,18 +32,18 @@ type config struct {
 	}
 }
 
-type Page struct {
+type page struct {
 	Title  string
 	Tweets []twitter.Tweet
 }
 
-type PageHandler struct {
+type pageHandler struct {
 	s3     *s3.S3
 	bucket string
 	name   string
 }
 
-func (h *PageHandler) getTemplatePath(urlPath string) (string, error) {
+func (h *pageHandler) getTemplatePath(urlPath string) (string, error) {
 	fp := filepath.Join("templates", filepath.Clean(urlPath))
 	if fp == "templates" {
 		fp = "templates/index.html"
@@ -63,7 +63,7 @@ func (h *PageHandler) getTemplatePath(urlPath string) (string, error) {
 	return fp, nil
 }
 
-func (h *PageHandler) getTweets() ([]twitter.Tweet, error) {
+func (h *pageHandler) getTweets() ([]twitter.Tweet, error) {
 	result, err := h.s3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(h.bucket),
 		Key:    aws.String(h.name),
@@ -81,19 +81,19 @@ func (h *PageHandler) getTweets() ([]twitter.Tweet, error) {
 	return tweets, nil
 }
 
-func (h *PageHandler) getPage() (*Page, error) {
+func (h *pageHandler) getPage() (*page, error) {
 	tweets, err := h.getTweets()
 	if err != nil {
 		return nil, err
 	}
-	page := &Page{
+	p := &page{
 		Title:  "Things Leila says…",
 		Tweets: tweets,
 	}
-	return page, nil
+	return p, nil
 }
 
-func (h *PageHandler) getTemplate(path string) (*template.Template, error) {
+func (h *pageHandler) getTemplate(path string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"formatDate": func(date string) string {
 			return strings.Join(strings.Split(date, " ")[:3], " ")
@@ -102,8 +102,8 @@ func (h *PageHandler) getTemplate(path string) (*template.Template, error) {
 	return template.New("index.html").Funcs(funcMap).ParseFiles(path)
 }
 
-func (h *PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	page, err := h.getPage()
+func (h *pageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p, err := h.getPage()
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, http.StatusText(503), 503)
@@ -123,7 +123,7 @@ func (h *PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tmpl.Execute(w, page); err != nil {
+	if err := tmpl.Execute(w, p); err != nil {
 		log.Println(err.Error())
 		http.Error(w, http.StatusText(500), 500)
 	}
@@ -155,12 +155,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler := &PageHandler{
+	handler := &pageHandler{
 		s3:     s3,
 		bucket: cfg.AWS.Bucket,
 		name:   cfg.AWS.ObjectName,
 	}
-
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.Handle("/", handler)
