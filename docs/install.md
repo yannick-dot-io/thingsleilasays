@@ -147,3 +147,25 @@ Push the code to Heroku and scale a web dyno
 git push heroku master
 heroku scale web=1:Free
 ```
+
+## Setup Heroku Scheduler
+
+Add the scheduler addon:
+
+```bash
+heroku addons:create scheduler:standard
+```
+
+Open it:
+
+```bash
+heroku addons:open scheduler
+```
+
+Click *Add new job*, enter `fetch` in the command field, set the job frequency
+to *Every 10 minutes* and click *Save*. Run the command once to seed the
+dataset:
+
+```bash
+heroku run fetch
+```
