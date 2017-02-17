@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -42,6 +43,26 @@ type PageHandler struct {
 	name   string
 }
 
+func (h *PageHandler) getTemplatePath(urlPath string) (string, error) {
+	fp := filepath.Join("templates", filepath.Clean(urlPath))
+	if fp == "templates" {
+		fp = "templates/index.html"
+	}
+
+	info, err := os.Stat(fp)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", err
+		}
+	}
+
+	if info.IsDir() {
+		return "", errors.New("template path is directory")
+	}
+
+	return fp, nil
+}
+
 func (h *PageHandler) getTweets() ([]twitter.Tweet, error) {
 	result, err := h.s3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(h.bucket),
@@ -60,44 +81,42 @@ func (h *PageHandler) getTweets() ([]twitter.Tweet, error) {
 	return tweets, nil
 }
 
-func (h *PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fp := filepath.Join("templates", filepath.Clean(r.URL.Path))
-	if fp == "templates" {
-		fp = "templates/index.html"
-	}
-
+func (h *PageHandler) getPage() (*Page, error) {
 	tweets, err := h.getTweets()
 	if err != nil {
-		http.Error(w, http.StatusText(503), 503)
+		return nil, err
 	}
 	page := &Page{
 		Title:  "Things Leila says…",
 		Tweets: tweets,
 	}
+	return page, nil
+}
 
-	info, err := os.Stat(fp)
-	if err != nil {
-		if os.IsNotExist(err) {
-			log.Println(fp)
-			log.Println(err.Error())
-			http.NotFound(w, r)
-			return
-		}
-	}
-
-	if info.IsDir() {
-		log.Println(fp)
-		http.NotFound(w, r)
-		return
-	}
-
+func (h *PageHandler) getTemplate(path string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"formatDate": func(date string) string {
 			return strings.Join(strings.Split(date, " ")[:3], " ")
 		},
 	}
+	return template.New("index.html").Funcs(funcMap).ParseFiles(path)
+}
 
-	tmpl, err := template.New("index.html").Funcs(funcMap).ParseFiles(fp)
+func (h *PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	page, err := h.getPage()
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(503), 503)
+	}
+
+	fp, err := h.getTemplatePath(r.URL.Path)
+	if err != nil {
+		log.Println(err.Error())
+		http.NotFound(w, r)
+		return
+	}
+
+	tmpl, err := h.getTemplate(fp)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, http.StatusText(500), 500)
