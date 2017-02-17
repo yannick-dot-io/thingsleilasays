@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -104,6 +105,10 @@ func (h *pageHandler) getTemplate(path string) (*template.Template, error) {
 				return t.Format("Mon Jan 2, 2006"), nil
 			}
 			return t.Format("Mon Jan 2"), nil
+		},
+
+		"formatTweet": func(text string) string {
+			return strings.Replace(text, ".  ", ". ", -1)
 		},
 	}
 	return template.New("index.html").Funcs(funcMap).ParseFiles(path)

@@ -37,7 +37,7 @@
         <h4>Things Leila says…</h4>
         {{ range $tweet := .Tweets }}
         <p><small style="color: #aaa;">{{ formatDate $tweet.CreatedAt }}</small><br/>
-        {{ printf $tweet.Text }}</p>
+        {{ formatTweet $tweet.Text }}</p>
         {{ end }}
         <p style="margin-top: 10%; margin=bottom: 10%;"><small style="color: #aaa;">&copy; 2017 Jamu Kakar</small><p>
       </div>
