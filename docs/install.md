@@ -39,9 +39,9 @@ aws s3api put-bucket-lifecycle-configuration --bucket thingsleilasays --lifecycl
             "Status": "Enabled",
             "Prefix": "",
             "NoncurrentVersionExpiration": {
-                "NoncurrentDays": 14
+                "NoncurrentDays": 3
             },
-            "ID": "Domain snapshot bucket lifecycle configuration"
+            "ID": "Tweet bucket lifecycle configuration"
         }
     ]
 }'
@@ -104,7 +104,8 @@ on the `thingsleilasays` app:
 heroku config:set -a thingsleilasays \
     AWS_REGION=us-east-1 \
     AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID \
-    AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY \
+    S3_BUCKET=thingsleilasays
 ```
 
 At this point the `thingsleilasays` app should have access to the read and
