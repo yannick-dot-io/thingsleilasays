@@ -173,7 +173,7 @@ func main() {
 		s3:      s3,
 		bucket:  cfg.AWS.Bucket,
 		name:    cfg.AWS.ObjectName,
-		kidName: cfg.kidName,
+		kidName: cfg.KidName,
 	}
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
