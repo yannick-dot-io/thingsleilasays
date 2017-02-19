@@ -22,7 +22,8 @@ import (
 )
 
 type config struct {
-	Port int `env:"PORT,default=5000"`
+	Port    int    `env:"PORT,default=5000"`
+	KidName string `env:"KID_NAME,default=leila"`
 
 	AWS struct {
 		Region          string `env:"AWS_REGION,required"`
@@ -39,9 +40,10 @@ type page struct {
 }
 
 type pageHandler struct {
-	s3     *s3.S3
-	bucket string
-	name   string
+	s3      *s3.S3
+	bucket  string
+	name    string
+	kidName string
 }
 
 func (h *pageHandler) getTemplatePath(urlPath string) (string, error) {
@@ -88,7 +90,7 @@ func (h *pageHandler) getPage() (*page, error) {
 		return nil, err
 	}
 	p := &page{
-		Title:  "Things Leila says…",
+		Title:  fmt.Sprintf("Things %s says…", h.kidName),
 		Tweets: tweets,
 	}
 	return p, nil
@@ -168,9 +170,10 @@ func main() {
 	}
 
 	handler := &pageHandler{
-		s3:     s3,
-		bucket: cfg.AWS.Bucket,
-		name:   cfg.AWS.ObjectName,
+		s3:      s3,
+		bucket:  cfg.AWS.Bucket,
+		name:    cfg.AWS.ObjectName,
+		kidName: cfg.kidName,
 	}
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
