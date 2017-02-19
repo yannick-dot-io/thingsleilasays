@@ -1,0 +1,4 @@
+p {
+  /* Keep tweets carriage returns */
+  white-space: pre-line;
+}
