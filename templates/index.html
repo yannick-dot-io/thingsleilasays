@@ -6,7 +6,7 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
   <title>{{.Title}}</title>
-  <meta name="description" content="Things Leila says">
+  <meta name="description" content="{{.Title}}">
   <meta name="author" content="Jamu Kakar <jkakar@kakar.ca>">
 
   <!-- Mobile Specific Metas
@@ -34,7 +34,7 @@
   <div class="container">
     <div class="row">
       <div class="one-half column" style="margin-top: 10%;">
-        <h4>Things Leila says…</h4>
+          <h4>{{.Title}}</h4>
         {{ range $tweet := .Tweets }}
         <p><small style="color: #aaa;">{{ formatDate $tweet.CreatedAt }}</small><br/>
         {{ formatTweet $tweet.Text }}</p>
