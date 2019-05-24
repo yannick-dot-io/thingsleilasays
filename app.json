@@ -48,7 +48,5 @@
     }
   },
   "name": "thingstomsays",
-  "scripts": {
-  },
   "stack": "heroku-18"
 }
