@@ -3,7 +3,9 @@
     "scheduler"
   ],
   "buildpacks": [
-    { "url": "heroku/go" }
+    { 
+      "url": "heroku/go" 
+    }
   ],
   "env": {
     "AWS_ACCESS_KEY_ID": {
